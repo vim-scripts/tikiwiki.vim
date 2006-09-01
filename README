@@ -1,0 +1,5 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=1645
+
+Syntax file for the tikiwiki language.
+This is mainly useful if your browser allows you to edit text areas in an external editor (like the Mozex entension of Firefox). See also vimtip #805 if you are on Windows.
+
