@@ -1,13 +1,16 @@
 " Vim syntax file
 " Language:     TikiWiki
 " Maintainer:   Olivier Teuliere <ipkiss@via.ecp.fr>
-" Version: 1.1
+" Version: 1.2
 " Last Change:  2007 Apr 11
-
+"
+" Description:
 " Syntax file to use a wiki-editor with VIM (for example using the Mozex
 " plugin for Firefox: http://mozex.mozdev.org/
-" See also vimtip #805 (http://www.vim.org/tips/tip.php?tip_id=805)
-
+" See also vimtip #805 (http://www.vim.org/tips/tip.php?tip_id=805) if you use
+" Windows.
+"
+" Customization:
 " Variables to control the highlighting:
 " tikiwiki_no_wikiword      Wiki words (LikeThis) are not highlighted
 " tikiwiki_no_rendering     The bold/italic/underline attributes are not
@@ -15,8 +18,29 @@
 " tikiwiki_my_rendering     The default mappings for rendering are ignored,
 "                           you can use your own ones (similar to html.vim)
 "
+" Unknown tikiwiki plugin names (e.g.: {FOO()/}) are highlighted like errors.
+" This is useful to detect typos in the names, but this behaviour may become
+" problematic if you have custom tikiwiki plugins.
+" You have 2 possibilities:
+"   - Add the names of the custom plugins to the tikiwikiPluginName syntax
+"     group. You can for example add the following in
+"     ~/.vim/after/syntax/tikiwiki.vim:
+"       syn keyword tikiwikiPluginName contained MYPLUGIN ANOTHERPLUGIN
+"     The advantage of this method is that you still get an error-like
+"     highlighting when 
+"   - Change the default highlighting for unknown plugin names.
+"     Example to deactivate the error highlighting:
+"       hi link tikiwikiPluginUnknown NONE
+"     Example to highlight unknown names like normal ones:
+"       hi link tikiwikiPluginUnknown Keyword
 "
 " Changelog:
+" Version 1.2:
+"   - Added support for plugins syntax: {PLUGINNAME(param=>value)/}
+"   - Allowed = instead of => in the parameters list of a plugin, since
+"     tikiwiki also seems to allow them
+"   - Unknown plugin names are highlighted like errors
+"   - Plugins inside headings and title bars are now allowed
 " Version 1.1:
 "   - Added dedicated support for the FANCYTABLE plugin
 "   - Used @NoSpell in some syntax groups to avoid spell checking
@@ -32,14 +56,17 @@ syn case match
 
 " Plugins
 syn keyword tikiwikiPluginName      contained AGENTINFO ALINK ANAME ARTICLE ARTICLES ATTACH AVATAR BACKLINKS BOX CATEGORY CATORPHANS CATPATH CENTER CODE COPYRIGHT COUNTDOWN DIV DL EXAMPLE FANCYTABLE FLASH FORMULA GAUGE JABBER LANG MAP MINIQUIZ MODULE MONO OBJECTHITS PLUGINMANAGER POLL QUOTE REGEX RSS SF SHEET SHOWPAGES SORT SPLIT SQL SUB THUMB TITLESEARCH TRACKER TRACKERLIST TRANSLATED USERCOUNT VERSIONS WANTEDPAGES
-syn match   tikiwikiPluginArrows    contained /=>\|,/
+syn match   tikiwikiPluginArrows    contained /=>\?\|,/
 syn match   tikiwikiPluginUnknown   contained /[A-Z]\+/
-syn match   tikiwikiPluginBraces    contained /[{}()]/
+syn match   tikiwikiPluginBraces    contained /[{}()\/]/
+syn match   tikiwikiPluginAttrName  contained /\w\+\s*=/me=e-1
 syn match   tikiwikiPluginAttrName  contained /\w\+\s*=>/me=e-2
+syn match   tikiwikiPluginAttrValue contained /=[^,)]\+/hs=s+1 contains=tikiwikiPluginArrows
 syn match   tikiwikiPluginAttrValue contained /=>[^,)]\+/hs=s+2 contains=tikiwikiPluginArrows
-syn match   tikiwikiPluginBegin     contained /{[A-Z]\+(\(\s*[a-z]\+\s*=>\s*"\?[^,"]\+"\?\s*\(,\s*[a-z]\+\s*=>\s*"\?[^,"]\+"\?\s*\)*\)\?)}/ contains=tikiwikiPluginBraces,tikiwikiPluginName,tikiwikiPluginAttrName,tikiwikiPluginAttrValue,tikiwikiPluginArrows
+syn match   tikiwikiPluginBegin     contained /{[A-Z]\+(\(\s*[a-z]\+\s*=>\?\s*"\?[^,")]\+"\?\s*\(,\s*[a-z]\+\s*=>\?\s*"\?[^,")]\+"\?\s*\)*\)\?)\/\?}/ contains=tikiwikiPluginBraces,tikiwikiPluginName,tikiwikiPluginUnknown,tikiwikiPluginAttrName,tikiwikiPluginAttrValue,tikiwikiPluginArrows
 syn match   tikiwikiPluginEnd       contained /{[A-Z]\+}/ contains=tikiwikiPluginBraces,tikiwikiPluginName,tikiwikiPluginUnknown
-syn region  tikiwikiPlugin          start=/{\z([A-Z]\+\)(\(\s*[a-z]\+\s*=>\s*"\?[^,"]\+"\?\s*\(,\s*[a-z]\+\s*=>\s*"\?[^,"]\+"\?\s*\)*\)\?)}/ end=/{\z1}/ keepend contains=@tikiwikiText,tikiwikiPlugin,tikiwikiPluginBegin,tikiwikiPluginEnd
+syn match   tikiwikiPlugin          /{[A-Z]\+(\(\s*[a-z]\+\s*=>\?\s*"\?[^,"]\{-}"\?\s*\(,\s*[a-z]\+\s*=>\?\s*"\?[^,]\{-}"\?\s*\)*\)\?)\/}/ contains=@tikiwikiText,tikiwikiPluginBegin
+syn region  tikiwikiPlugin          start=/{\z([A-Z]\+\)(\(\s*[a-z]\+\s*=>\?\s*"\?[^,"]\+"\?\s*\(,\s*[a-z]\+\s*=>\?\s*"\?[^,"]\+"\?\s*\)*\)\?)}/ end=/{\z1}/ keepend contains=@tikiwikiText,tikiwikiPlugin,tikiwikiPluginBegin,tikiwikiPluginEnd
 
 
 " Color groups
@@ -80,8 +107,8 @@ syn match   tikiwikiTableCol        contained /|/
 syn match   tikiwikiFancyTablecol   contained /\~|\~/
 syn region  tikiwikiTable           start=/||/ end=/||/ contains=@tikiwikiText,tikiwikiTableCol keepend
 
-syn region  tikiwikiTitleBar        matchgroup=tikiwikiChars start=/-=/ end=/=-/ oneline
-syn region  tikiwikiHeading         matchgroup=tikiwikiChars start=/^!\+[+-]\?/ end=/$/ oneline keepend contains=@tikiwikiText
+syn region  tikiwikiTitleBar        matchgroup=tikiwikiChars start=/-=/ end=/=-/ oneline contains=tikiwikiPlugin
+syn region  tikiwikiHeading         matchgroup=tikiwikiChars start=/^!\+[+-]\?/ end=/$/ oneline keepend contains=@tikiwikiText,tikiwikiPlugin
 syn region  tikiwikiCenter          matchgroup=tikiwikiChars start=/::/ end=/::/ oneline contains=@tikiwikiText
 syn region  tikiwikiBox             matchgroup=tikiwikiChars start=/\^/ end=/\^/ contains=@tikiwikiText
 syn region  tikiwikiMonospaced      matchgroup=tikiwikiChars start=/-+/ end=/+-/ contains=@tikiwikiText
@@ -121,6 +148,7 @@ hi def link tikiwikiHeading          Title
 hi def link tikiwikiColorError       Error
 hi def link tikiwikiColorNumber      String
 hi def link tikiwikiPluginName       Keyword
+hi def link tikiwikiPluginUnknown    Error
 hi def link tikiwikiPluginEnd        Keyword
 hi def link tikiwikiPluginAttrName   Type
 hi def link tikiwikiPluginAttrValue  String
